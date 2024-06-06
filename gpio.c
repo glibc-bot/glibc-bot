@@ -148,3 +148,71 @@ void set_busen2(uint8_t value)
 {
 	*(uint32_t*)(kol_base_addr + 0x08) = value ? 0x55 : 0xaa;
 }
+
+void gpio_init()
+{
+    gpio_fpga_mmap(); //pl gpio 
+
+    gpio_mode_init(SINGLE_IO, ENUM_KOL);
+    gpio_mode_init(SINGLE_IO, ENUM_KO_DY);
+    set_busen2(1);
+
+    gpio_ki_init(KI1,2000);
+    gpio_ki_init(KI2,2000);
+    gpio_ki_init(KI3,2000);
+    gpio_ki_init(KI4,2000);
+
+    printf("GPIO init!\r\n");
+
+    for(char i=0;i<9;i++)
+    {
+       set_kol(i,LOW);
+    }
+
+    set_kol(KO1,LOW);
+    set_kol(KO2,LOW);
+    set_kol(KO3,LOW);
+    set_kol(KO4,LOW);
+}
+
+void network_io_contrlo(unsigned char *srcData,unsigned short len,unsigned char *sendData)
+{
+    char gpionum = srcData[6+0];
+    char gpiodire = srcData[6+1];     //0:input 1:output
+    char gpiovalue = srcData[6+2];    //0:colse 1:open
+    
+    if(gpiodire)
+    {
+        // gpio_set_value(gpionum, gpiovalue);
+        printf("gpio:%d output value:%d\r\n",gpionum,gpiovalue);
+        gpionum = gpionum-1;
+
+        if(gpionum<4)
+            set_kol(gpionum,gpiovalue); //kol1~kol4
+        else if(gpionum<8)
+            set_kol(gpionum+487,gpiovalue); //ko1~4 4  480+11
+        else
+            set_kol(gpionum-4,gpiovalue); //ko5~9
+        
+    }else{
+        char value = 1;
+        // gpio_get_value(gpionum, &value);
+        gpionum = gpionum-4;
+
+
+
+        int valueint = *(uint32_t*)(ki_base_addr);
+
+        value = get_ki_state(gpionum);
+        
+        printf("gpio:%d input value:%d valueint:%d\r\n",gpionum,value,valueint);
+
+        
+
+        sendData[0] = srcData[6+0];
+        sendData[1] = srcData[6+1];
+        sendData[2] = value;
+    }
+
+
+}

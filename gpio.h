@@ -113,5 +113,9 @@ void set_busen2(uint8_t value);
 
 void set_ko_dy(enum KO_DY, uint8_t value);
 
+void network_io_contrlo(unsigned char *srcData,unsigned short len,unsigned char *sendData);
+
+void gpio_init();
+
 
 #endif /* DRIVER_TIMERANDIO_H_ */
